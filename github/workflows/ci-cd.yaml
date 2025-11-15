@@ -50,5 +50,9 @@ jobs:
 
     - name: 6. Deploy to Minikube using kubectl
       run: |
-        # Deployment/Service YAMLを適用 (ルート直下からk8sへ)
         kubectl apply -f k8s/deployment.yaml
+  # Deployment/Service YAMLを適用 (ルート直下からk8sへ)
+        
+
+  # ... (既存のファイル内容の末尾)
+  # 2025/11/15 added comment for re-trigger
