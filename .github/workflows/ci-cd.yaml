@@ -1,0 +1,58 @@
+# .github/workflows/ci-cd.yaml
+name: CI/CD Pipeline - Portfolio Manager BE
+
+on:
+  # mainブランチにプッシュがあったときにトリガー
+  push:
+    branches:
+      - main
+    # ⚠️ 修正されたパス設定 (ルート直下全体)
+    paths:
+      - '**'
+
+env:
+  NEXUS_HOST: 192.168.56.1:8082
+  IMAGE_NAME: portfolio-manager-be
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 1. Checkout repository code
+      uses: actions/checkout@v4
+
+    # --- Docker ビルドとNexusへのプッシュ ---
+    - name: 2. Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 3. Login to Nexus Docker Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.NEXUS_HOST }}
+        username: ${{ secrets.NEXUS_USERNAME }}
+        password: ${{ secrets.NEXUS_PASSWORD }}
+
+    - name: 4. Build and Push to Nexus
+      uses: docker/build-push-action@v5
+      with:
+        # ⚠️ 修正されたコンテキスト (ルート直下)
+        context: ./ 
+        push: true
+        tags: ${{ env.NEXUS_HOST }}/${{ env.IMAGE_NAME }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    # --- Kubernetesへのデプロイ ---
+    - name: 5. Set up kubectl (Kubernetes client)
+      uses: azure/setup-kubectl@v4
+      id: install
+
+    - name: 6. Deploy to Minikube using kubectl
+      run: |
+        kubectl apply -f k8s/deployment.yaml
+  # Deployment/Service YAMLを適用 (ルート直下からk8sへ)
+        
+
+  # ... (既存のファイル内容の末尾)
+  # 2025/11/15 added comment for re-trigger
