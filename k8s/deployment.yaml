@@ -1,0 +1,47 @@
+# portfolio-manager-be/k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-manager-be
+  namespace: portfolio-manager
+  labels:
+    app: portfolio-manager-be
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portfolio-manager-be
+  template:
+    metadata:
+      labels:
+        app: portfolio-manager-be
+    spec:
+      # --- ここが最も重要な部分です ---
+      # 以前作成したSecretを参照し、プライベートレジストリからのプルを許可します
+      imagePullSecrets:
+      - name: nexus-registry-secret
+      # ---------------------------------
+      containers:
+      - name: portfolio-manager-be
+        # ⚠️ CIでNexusにプッシュする予定の完全なイメージパスに置き換えてください
+        image: 192.168.56.1:8082/portfolio-manager-be:latest 
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-manager-be-service
+  namespace: portfolio-manager
+spec:
+  type: LoadBalancer # MinikubeではNodePortとして機能します
+  selector:
+    app: portfolio-manager-be
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080 # アプリケーションが稼働しているポート
